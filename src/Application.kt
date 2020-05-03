@@ -7,24 +7,11 @@ import io.ktor.routing.*
 import freemarker.cache.*
 import io.ktor.freemarker.*
 import kotlinx.coroutines.selects.select
-import org.jetbrains.exposed.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.*
+import java.sql.Connection
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
-
-data class vcf(val name:String, val left_boundary: Int,
-               val right_boundary: Int, val nucleotide: Char, val rs: Int)
-object VCF_data : Table() {
-    val id: Column<Int> = integer("id").autoIncrement()
-    val contig: Column<String> = varchar("contig", 55)
-    val left_boundary: Column<Int> = integer("left_boundary")
-    val right_boundary: Column<Int> = integer("right_boundary")
-    val nucleotide: Column<Char> = char("nucleotide")
-    val rs: Column<Int> = integer("rs")
-    override val primaryKey = PrimaryKey(id)
-}
-
 
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
@@ -34,12 +21,17 @@ fun Application.module(testing: Boolean = false) {
     }
 
     Database.connect("jdbc:mysql://localhost:3306/users", driver = "com.mysql.jdbc.Driver",
-        user = "newuser", password = "")
+            user = "newuser", password = "password")
+    TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
 
-    transaction {
-        SchemaUtils.create(VCF_data)
 
+    var res = transaction {
+        VCF_data.selectAll().map { vcf(it[VCF_data.id], it[VCF_data.contig],
+                it[VCF_data.left_boundary], it[VCF_data.right_boundary], it[VCF_data.nucleotide],
+                it[VCF_data.rs]) }
     }
+    
+
 
 
     routing {
@@ -50,7 +42,7 @@ fun Application.module(testing: Boolean = false) {
         post {
             val post = call.receiveParameters()
             if (post["contig"] == "42") {
-                call.respondText("Don't panic!")
+                call.respondText(res.toString())
             } else {
                 call.respondText("Ok, you can panic just a little bit.")
             }
@@ -58,3 +50,4 @@ fun Application.module(testing: Boolean = false) {
 
     }
 }
+
