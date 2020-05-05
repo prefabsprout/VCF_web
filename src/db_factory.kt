@@ -1,9 +1,12 @@
 package com.vcf_web
 
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.transactions.TransactionManager
-import java.sql.Connection
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.sql.Connection
 
 
 
@@ -27,15 +30,4 @@ fun main() {
     transaction {
         SchemaUtils.create(VCF_data)
         }
-//    var res = transaction {
-//        VCF_data
-//                .slice(VCF_data.rs)
-//                .select { (VCF_data.contig eq "chr42" and
-//                        (VCF_data.left_boundary eq 9578804) and
-//                        (VCF_data.right_boundary eq 9578807) and
-//                        (VCF_data.nucleotide eq "A"));
-//                }
-//                .map { it[VCF_data.rs]}
-//    }
-//    println(res)
 }
