@@ -14,9 +14,6 @@
     <div><input type="text" name="nucleotide" /></div>
     <div><input type="submit" value="Submit" /></div>
 </form>
-<form action="/res" method="get">
-<div><output name = "results"></output><div>
-</form>
 </body>
 </html>
 
