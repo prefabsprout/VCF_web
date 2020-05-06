@@ -56,6 +56,14 @@ fun Application.module(testing: Boolean = false) {
 
         post {
             val post = call.receiveParameters()
+            if (
+                post["contig"].toString().isEmpty() ||
+                post["left_boundary"].toString().isEmpty() ||
+                post["right_boundary"].toString().isEmpty() ||
+                post["nucleotide"].toString().isEmpty()
+            ) {
+                call.respond(HttpStatusCode.BadRequest)
+            }
             var res = transaction {
                 VCF_data
                     .slice(VCF_data.rs)
@@ -70,8 +78,7 @@ fun Application.module(testing: Boolean = false) {
                 call.respond(Response(rsID = res.toString()))
             }
             else {
-                call.respond(HttpStatusCode.NotFound,
-                        ContentType.Text.Html)
+                call.respond(HttpStatusCode.NotFound)
             }
         }
 
