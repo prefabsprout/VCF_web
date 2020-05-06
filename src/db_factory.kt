@@ -18,7 +18,7 @@ object VCF_data : Table() {
     val left_boundary: Column<Int> = integer("left_boundary")
     val right_boundary: Column<Int> = integer("right_boundary")
     val nucleotide: Column<String> = varchar("nucleotide", 10000)
-    val rs: Column<String> = varchar("rs", 40)
+    val rs: Column<String> = text("rs")
     override val primaryKey = PrimaryKey(id)
 }
 

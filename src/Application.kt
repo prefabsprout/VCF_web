@@ -67,14 +67,15 @@ fun Application.module(testing: Boolean = false) {
             }
 
             if (res.isNotEmpty()){
-                call.respondText("Result of your request:" +
-                        res.toString(),ContentType.Text.Html)
+                call.respond(Response(rsID = res.toString()))
             }
-            else if (res.isEmpty()){
-                call.respondText("Oops! Looks like we're not found your annotation.",
+            else {
+                call.respond(HttpStatusCode.NotFound,
                         ContentType.Text.Html)
             }
         }
 
     }
 }
+
+data class Response(val rsID: String)
