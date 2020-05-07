@@ -1,6 +1,8 @@
 package com.vcf_web
 
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import freemarker.cache.ClassTemplateLoader
 import io.ktor.application.Application
 import io.ktor.application.call
@@ -45,8 +47,15 @@ fun Application.module(testing: Boolean = false) {
         }
     }
 
-    Database.connect("jdbc:mysql://localhost:3306/vcf", driver = "com.mysql.jdbc.Driver",
-        user = "newuser", password = "password")
+    val config = HikariConfig().apply {
+        jdbcUrl         = "jdbc:mysql://localhost:3306/vcf"
+        driverClassName = "com.mysql.jdbc.Driver"
+        username        = "newuser"
+        password        = "password"
+        maximumPoolSize = 10
+    }
+    val dataSource = HikariDataSource(config)
+    Database.connect(dataSource)
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
 
     routing {

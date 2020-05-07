@@ -1,5 +1,7 @@
 package com.vcf_web
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -24,8 +26,16 @@ object VCF_data : Table() {
 
 
 fun main() {
-    Database.connect("jdbc:mysql://localhost:3306/vcf", driver = "com.mysql.jdbc.Driver",
-            user = "newuser", password = "password")
+    val config = HikariConfig().apply {
+        jdbcUrl         = "jdbc:mysql://localhost:3306/vcf"
+        driverClassName = "com.mysql.jdbc.Driver"
+        username        = "newuser"
+        password        = "password"
+        maximumPoolSize = 10
+    }
+    val dataSource = HikariDataSource(config)
+    Database.connect(dataSource)
+
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
     transaction {
         SchemaUtils.create(VCF_data)

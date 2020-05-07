@@ -45,5 +45,6 @@ dependencies {
     implementation "com.opencsv:opencsv:4.6"
     implementation "io.ktor:ktor-jackson:$ktor_version"
     implementation 'com.google.code.gson:gson:2.8.6'
+    implementation "com.zaxxer:HikariCP:3.4.2"
     testImplementation "io.ktor:ktor-server-tests:$ktor_version"
 }
