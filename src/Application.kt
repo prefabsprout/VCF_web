@@ -1,8 +1,6 @@
 package com.vcf_web
 
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import freemarker.cache.ClassTemplateLoader
 import io.ktor.application.Application
 import io.ktor.application.call
@@ -20,12 +18,9 @@ import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.routing
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.TransactionManager
-import org.jetbrains.exposed.sql.transactions.transaction
-import java.sql.Connection
+import htsjdk.tribble.readers.TabixReader
+import htsjdk.tribble.readers.TabixIteratorLineReader
+
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
@@ -41,22 +36,12 @@ fun Application.module(testing: Boolean = false) {
             call.respondText(e.localizedMessage, ContentType.Text.Plain, HttpStatusCode.InternalServerError)
         }
     }
+
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
         }
     }
-
-    val config = HikariConfig().apply {
-        jdbcUrl         = "jdbc:mysql://localhost:3306/vcf"
-        driverClassName = "com.mysql.jdbc.Driver"
-        username        = "newuser"
-        password        = "password"
-        maximumPoolSize = 10
-    }
-    val dataSource = HikariDataSource(config)
-    Database.connect(dataSource)
-    TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
 
     routing {
         get("/") {
@@ -65,33 +50,36 @@ fun Application.module(testing: Boolean = false) {
 
         post {
             val post = call.receiveParameters()
+
             if (
-                post["contig"].toString().isEmpty() ||
-                post["left_boundary"].toString().isEmpty() ||
-                post["right_boundary"].toString().isEmpty() ||
-                post["nucleotide"].toString().isEmpty()
+                    post["contig"].toString().isEmpty() ||
+                    post["left_boundary"].toString().isEmpty() ||
+                    post["right_boundary"].toString().isEmpty()
             ) {
                 call.respond(HttpStatusCode.BadRequest)
             }
-            var res = transaction {
-                VCF_data
-                    .slice(VCF_data.rs)
-                    .select { (VCF_data.contig eq post["contig"].toString()) and
-                            (VCF_data.left_boundary eq (post["left_boundary"]?.toInt() ?: 0)) and
-                            (VCF_data.right_boundary eq (post["right_boundary"]?.toInt() ?: 0)) and
-                            (VCF_data.nucleotide eq post["nucleotide"].toString());}
-                    .map { it[VCF_data.rs]}
-            }
 
-            if (res.isNotEmpty()){
-                call.respond(Response(rsID = res.toString()))
-            }
-            else {
+            val tab_r = TabixReader(
+                    "resources/data/42.tsv.gz",
+                    "resources/data/42.tsv.gz.tbi"
+            )
+            var res =
+                    TabixIteratorLineReader(tab_r.query(post["contig"].toString(),
+                    post["left_boundary"]?.toInt()!!,
+                    post["right_boundary"]?.toInt()!!))
+                    .readLine()
+
+            if (res == null) {
                 call.respond(HttpStatusCode.NotFound)
             }
-        }
 
+            else {
+                val rs = res.split("\t").toList()[4]
+                val nucl = res.split("\t").toList()[3]
+                call.respond(Response(rsID = rs, nucl_seq = nucl))
+            }
+        }
     }
 }
+data class Response(val rsID: String, val nucl_seq: String)
 
-data class Response(val rsID: String)
