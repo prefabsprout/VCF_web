@@ -76,7 +76,7 @@ fun Application.module(testing: Boolean = false) {
                 }
             }
 
-            if (res == null) {
+            if (res.isEmpty()) {
                 call.respond(HttpStatusCode.NotFound)
             }
 
