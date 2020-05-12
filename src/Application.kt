@@ -54,7 +54,8 @@ fun Application.module(testing: Boolean = false) {
             if (
                     post["contig"].toString().isEmpty() ||
                     post["left_boundary"].toString().isEmpty() ||
-                    post["right_boundary"].toString().isEmpty()
+                    post["right_boundary"].toString().isEmpty() ||
+                    post["nucleotide"].toString().isEmpty()
             ) {
                 call.respond(HttpStatusCode.BadRequest)
             }
@@ -69,17 +70,16 @@ fun Application.module(testing: Boolean = false) {
                     post["right_boundary"]?.toInt()!!))
                     .readLine()
 
-            if (res == null) {
+            if (res == null || res.split("\t").toList()[3] != post["nucleotide"]) {
                 call.respond(HttpStatusCode.NotFound)
             }
 
             else {
                 val rs = res.split("\t").toList()[4]
-                val nucl = res.split("\t").toList()[3]
-                call.respond(Response(rsID = rs, nucl_seq = nucl))
+                call.respond(Response(rsID = rs))
             }
         }
     }
 }
-data class Response(val rsID: String, val nucl_seq: String)
+data class Response(val rsID: String)
 
