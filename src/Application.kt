@@ -2,6 +2,7 @@ package com.vcf_web
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import freemarker.cache.ClassTemplateLoader
+import htsjdk.tribble.readers.LineIteratorImpl
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -20,8 +21,6 @@ import io.ktor.routing.post
 import io.ktor.routing.routing
 import htsjdk.tribble.readers.TabixReader
 import htsjdk.tribble.readers.TabixIteratorLineReader
-
-
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -64,22 +63,30 @@ fun Application.module(testing: Boolean = false) {
                     "resources/data/42.tsv.gz",
                     "resources/data/42.tsv.gz.tbi"
             )
-            var res =
+            var tab_r_iter =
                     TabixIteratorLineReader(tab_r.query(post["contig"].toString(),
                     post["left_boundary"]?.toInt()!!,
                     post["right_boundary"]?.toInt()!!))
-                    .readLine()
 
-            if (res == null || res.split("\t").toList()[3] != post["nucleotide"]) {
+            var res = mutableListOf<String>()
+
+            LineIteratorImpl(tab_r_iter).forEach {
+                if (it.split("\t").toList()[3] == post["nucleotide"]) {
+                    res.add(it.split("\t").toList()[4])
+                }
+            }
+
+            if (res == null) {
                 call.respond(HttpStatusCode.NotFound)
             }
 
             else {
-                val rs = res.split("\t").toList()[4]
+                val rs = res
                 call.respond(Response(rsID = rs))
             }
         }
     }
 }
-data class Response(val rsID: String)
+
+data class Response(val rsID: MutableList<String>)
 
